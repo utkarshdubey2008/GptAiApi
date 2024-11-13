@@ -1,12 +1,13 @@
 from fastapi import FastAPI, HTTPException
 from groq import Groq
+from urllib.parse import unquote
 
 app = FastAPI()
 
 # Initialize Groq client with your API key
 client = Groq(api_key="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")  # Replace with your actual key
 
-# Define custom responses
+# Define custom responses (case-insensitive matching)
 custom_responses = {
     "who made you": "I am a large language model by @Thealphabotz and @AlphaApis. My creator is @Adarsh2626.",
     "who created you": "I am a large language model by @Thealphabotz and @AlphaApis. My creator is @Adarsh2626.",
@@ -19,10 +20,12 @@ custom_responses = {
 
 @app.get("/api/gpt/chat/{prompt}")
 async def chat(prompt: str):
-    # Check if the prompt has a custom response
-    prompt_lower = prompt.lower()
-    if prompt_lower in custom_responses:
-        return {"response": f"Response= {custom_responses[prompt_lower]} Api created by @Thealphabotz and @AlphaApis."}
+    # URL-decode the prompt to handle spaces properly
+    prompt_decoded = unquote(prompt).lower()
+    
+    # Check if the prompt has a custom response (case-insensitive)
+    if prompt_decoded in custom_responses:
+        return {"response": f"Response= {custom_responses[prompt_decoded]} Api created by @Thealphabotz and @AlphaApis."}
     
     try:
         # Create a completion with the Groq client for non-custom responses
@@ -42,7 +45,7 @@ async def chat(prompt: str):
             response_text += chunk.choices[0].delta.content or ""
         
         # Format the final response with footer
-        return {"response": f"Response= {response_text} Api created by @Thealphabotz and @AlphaApis."}
+        return {"response": f"{response_text} Api created by @Thealphabotz and @AlphaApis."}
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
